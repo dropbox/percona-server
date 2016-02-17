@@ -515,7 +515,7 @@ trx_undo_page_report_insert(
 
 		ptr += mach_write_compressed(ptr, flen);
 
-		if (flen != UNIV_SQL_NULL) {
+		if (flen != UNIV_SQL_NULL && flen != 0) {
 			if (trx_undo_left(undo_page, ptr) < flen) {
 
 				return(0);
