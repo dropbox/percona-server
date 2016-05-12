@@ -438,9 +438,8 @@ static bool check_json_depth(size_t depth)
 
 
 /**
-  This class overrides the methods on BaseReaderHandler to make
-  out own handler which will construct our DOM from the parsing
-  of the JSON text.
+  This class implements rapidjson's Handler concept to make our own handler
+  which will construct our DOM from the parsing of the JSON text.
   <code>
   bool Null() {   }
   bool Bool(bool) {   }
@@ -449,6 +448,7 @@ static bool check_json_depth(size_t depth)
   bool Int64(int64_t) {   }
   bool Uint64(uint64_t) {   }
   bool Double(double) {   }
+  bool RawNumber(const Ch*, SizeType, bool) {   }
   bool String(const Ch*, SizeType, bool) {   }
   bool StartObject() {   }
   bool Key() {   }
@@ -458,7 +458,7 @@ static bool check_json_depth(size_t depth)
   </code>
   @see Json_dom::parse
 */
-class Rapid_json_handler : public BaseReaderHandler<UTF8<> >
+class Rapid_json_handler
 {
 private:
 
@@ -649,6 +649,12 @@ public:
       DUMP_CALLBACK("double", state);
       return seeing_scalar(new (std::nothrow) Json_double(d));
     }
+  }
+
+  bool RawNumber(const char*, SizeType, bool)
+  {
+    DBUG_ASSERT(false);
+    return false;
   }
 
   bool String(const char* str, SizeType length, bool copy)
@@ -851,7 +857,7 @@ public:
     return true;
   }
 
-  bool Key(const Ch* str, SizeType len, bool copy)
+  bool Key(const char* str, SizeType len, bool copy)
   {
     return String(str, len, copy);
   }
@@ -930,6 +936,8 @@ public:
   bool Double(double, bool is_int= false) { return seeing_scalar(); }
   bool String(const char*, SizeType, bool) { return seeing_scalar(); }
   bool Key(const char*, SizeType, bool) { return seeing_scalar(); }
+  bool RawNumber(const char*, SizeType, bool)
+  { return seeing_scalar(); }
 };
 
 
