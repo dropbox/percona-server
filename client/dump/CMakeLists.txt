@@ -37,33 +37,6 @@ IF(USING_LOCAL_BOOST)
     -DBOOST_SYSTEM_NO_DEPRECATED)
 ENDIF()
 
-SET(BOOST_LIB_SOURCES
-  ${BOOST_SOURCES_DIR}/libs/chrono/src/chrono.cpp
-  ${BOOST_SOURCES_DIR}/libs/system/src/error_code.cpp
-)
-
-IF(USING_LOCAL_BOOST)
-  ADD_CONVENIENCE_LIBRARY(boost_lib ${BOOST_LIB_SOURCES})
-
-  # Do not build library unless it is needed by some other target.
-  SET_PROPERTY(TARGET boost_lib PROPERTY EXCLUDE_FROM_ALL TRUE)
-
-  ADD_COMPILE_FLAGS(
-    ${BOOST_LIB_SOURCES}
-    COMPILE_FLAGS -I${BOOST_PATCHES_DIR} -isystem ${BOOST_INCLUDE_DIR}
-    )
-
-  IF(HAVE_clock_gettime_IN_rt)
-    TARGET_LINK_LIBRARIES(boost_lib ${LIBRT})
-  ENDIF()
-
-  # Need explicit pthread for gcc -fsanitize=address
-  IF(CMAKE_USE_PTHREADS_INIT AND CMAKE_C_FLAGS MATCHES "-fsanitize=")
-    TARGET_LINK_LIBRARIES(boost_lib pthread)
-  ENDIF()
-  SET(LOCAL_BOOST_LIB boost_lib)
-ENDIF()
-
 SET(MYSQLPUMP_LIB_SOURCES
   abstract_chain_element.cc
   abstract_connection_provider.cc
@@ -182,11 +155,7 @@ ADD_COMPILE_FLAGS(
   program.cc COMPILE_FLAGS -I${BOOST_PATCHES_DIR} -I${BOOST_INCLUDE_DIR}
 )
 
-TARGET_LINK_LIBRARIES(mysqlpump mysqlpump_lib ${LOCAL_BOOST_LIB})
-IF(USING_SYSTEM_BOOST)
-  TARGET_LINK_LIBRARIES(mysqlpump "-lboost_system")
-  TARGET_LINK_LIBRARIES(mysqlpump "-lboost_chrono")
-ENDIF()
+TARGET_LINK_LIBRARIES(mysqlpump mysqlpump_lib)
 
 SET_TARGET_PROPERTIES(mysqlpump PROPERTIES HAS_CXX TRUE)
 
