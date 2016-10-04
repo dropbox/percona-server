@@ -102,19 +102,10 @@ FILE(
   "${PROJECT_SOURCE_DIR}/rapid/plugin/x/mysqlxtest_src/mysqlx_row.cc"
 )
 
-# boost::shared_ptr depends on scoped_lock
-# Prevent missing symbols scoped_lock() CTOR/DTOR in sasl_authentication_t.cc
-#   boost::atomics::detail::lockpool::scoped_lock::~scoped_lock()
-UNSET(BOOST_LIB_SOURCES)
-IF (CMAKE_CXX_COMPILER_ID STREQUAL "SunPro")
-  SET(BOOST_LIB_SOURCES
-    ${BOOST_SOURCES_DIR}/libs/atomic/src/lockpool.cpp)
-ENDIF()
-
 SET(unit_tests_EXE xplugin_unit_tests)
 
 ADD_EXECUTABLE(${unit_tests_EXE}
-  ${unit_tests_SRC} ${xplugin_SRC} ${protobuf_SRC} ${BOOST_LIB_SOURCES}
+  ${unit_tests_SRC} ${xplugin_SRC} ${protobuf_SRC}
 )
 
 ADD_DEPENDENCIES(${unit_tests_EXE} mysqlxtest)
