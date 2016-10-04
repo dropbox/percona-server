@@ -140,7 +140,7 @@ ELSE()
   MYSQL_ADD_PLUGIN(mysqlx
     src/xpl_plugin.cc
     src/xpl_performance_schema.cc
-    ${xplugin_SRC} ${xplugin_HDRS} ${xplugin_PROTOBUF_SRC} ${BOOST_LIB_SOURCES}
+    ${xplugin_SRC} ${xplugin_HDRS} ${xplugin_PROTOBUF_SRC}
     LINK_LIBRARIES ${xplugin_PROTOBUF_LIB} ${LIBEVENT_LIBRARY} ${LIBEVENT_LIBRARIES}
     MODULE_ONLY MODULE_OUTPUT_NAME "mysqlx")
 
