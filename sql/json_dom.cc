@@ -20,7 +20,7 @@
 #include "sql_const.h"
 #include "derror.h"
 #include "base64.h"
-#include "m_string.h"           // my_gcvt, _dig_vec_lower
+#include "m_string.h"           // my_gcvt, _dig_vec_lower, my_strtod
 #include "mysqld_error.h"       // ER_*
 #include "prealloced_array.h"   // Prealloced_array
 #include "template_utils.h"     // down_cast, pointer_cast
@@ -510,13 +510,11 @@ private:
   enum_state m_state;
   Compound_vector m_stack;
   Json_dom *m_dom_as_built;
-  bool m_preserve_neg_zero_int;
 public:
-  Rapid_json_handler(bool preserve_neg_zero_int= false)
+  Rapid_json_handler()
     : m_state(expect_anything),
       m_stack(key_memory_JSON),
-      m_dom_as_built(NULL),
-      m_preserve_neg_zero_int(preserve_neg_zero_int)
+      m_dom_as_built(NULL)
   {}
 
   ~Rapid_json_handler()
@@ -633,28 +631,21 @@ public:
     return seeing_scalar(new (std::nothrow) Json_uint(ui64));
   }
 
-  bool Double(double d, bool is_int= false)
+  bool Double(double d)
   {
-    if (is_int && !m_preserve_neg_zero_int)
-    {
-      /*
-        The is_int flag is true only if -0 was seen. Handle it as an
-        integer.
-      */
-      DBUG_ASSERT(d == 0.0);
-      return Int64(static_cast<int64_t>(d));
-    }
-    else
-    {
-      DUMP_CALLBACK("double", state);
-      return seeing_scalar(new (std::nothrow) Json_double(d));
-    }
+    DUMP_CALLBACK("double", state);
+    return seeing_scalar(new (std::nothrow) Json_double(d));
   }
 
-  bool RawNumber(const char*, SizeType, bool)
+  bool RawNumber(const char* str, SizeType length, bool)
   {
-    DBUG_ASSERT(false);
-    return false;
+    char *end[]= { const_cast<char*>(str) + length };
+    int error= 0;
+    double value = my_strtod(str, end, &error);
+
+    if (error == EOVERFLOW)
+      return false;
+    return Double(value);
   }
 
   bool String(const char* str, SizeType length, bool copy)
@@ -866,12 +857,15 @@ public:
 
 Json_dom *Json_dom::parse(const char *text, size_t length,
                           const char **syntaxerr, size_t *offset,
-                          bool preserve_neg_zero_int)
+                          bool handle_numbers_as_double)
 {
-  Rapid_json_handler handler(preserve_neg_zero_int);
+  Rapid_json_handler handler;
   MemoryStream ss(text, length);
   Reader reader;
-  bool success= reader.Parse<kParseDefaultFlags>(ss, handler);
+  bool success=
+    handle_numbers_as_double ?
+    reader.Parse<kParseNumbersAsStringsFlag>(ss, handler) :
+    reader.Parse<kParseDefaultFlags>(ss, handler);
 
   if (success)
   {

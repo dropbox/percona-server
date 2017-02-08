@@ -92,11 +92,9 @@ bool ensure_utf8mb4(String *val, String *buf,
                            as input
   @param[out] parse_error  set to true if the parser was run and found an error
                            else false
-  @param[in]  preserve_neg_zero_int
-                           Whether integer negative zero should be preserved.
-                           If set to TRUE, -0 is handled as a DOUBLE. Double
-                           negative zero (-0.0) is preserved regardless of what
-                           this parameter is set to.
+  @param[in]  handle_numbers_as_double
+                           Whether numbers should be handled as double. If set
+                           to TRUE, all numbers are parsed as DOUBLE
 
   @returns false if the arg parsed as valid JSON, true otherwise
 */
@@ -106,7 +104,7 @@ static bool parse_json(String *res,
                        Json_dom **dom,
                        bool require_str_or_json,
                        bool *parse_error,
-                       bool preserve_neg_zero_int= false)
+                       bool handle_numbers_as_double= false)
 {
   char buff[MAX_FIELD_WIDTH];
   String utf8_res(buff, sizeof(buff), &my_charset_utf8mb4_bin);
@@ -131,7 +129,7 @@ static bool parse_json(String *res,
   const char *parse_err;
   size_t err_offset;
   *dom= Json_dom::parse(safep, safe_length, &parse_err, &err_offset,
-                        preserve_neg_zero_int);
+                        handle_numbers_as_double);
 
   if (*dom == NULL && parse_err != NULL)
   {
@@ -256,11 +254,9 @@ static bool get_json_string(Item *arg_item,
                             as input
   @param[out]    valid      true if a valid JSON value was found (or NULL),
                             else false
-  @param[in]     preserve_neg_zero_int
-                            Whether integer negative zero should be preserved.
-                            If set to TRUE, -0 is handled as a DOUBLE. Double
-                            negative zero (-0.0) is preserved regardless of what
-                            this parameter is set to.
+  @param[in]     handle_numbers_as_double
+                            whether numbers should be handled as double. If set
+                            to TRUE, all numbers are parsed as DOUBLE
 
   @returns true iff syntax error *and* dom != null, else false
 */
@@ -271,7 +267,7 @@ static bool json_is_valid(Item **args,
                           Json_dom **dom,
                           bool require_str_or_json,
                           bool *valid,
-                          bool preserve_neg_zero_int= false)
+                          bool handle_numbers_as_double= false)
 {
   Item *const arg_item= args[arg_idx];
 
@@ -318,7 +314,7 @@ static bool json_is_valid(Item **args,
       bool parse_error= false;
       const bool failure= parse_json(res, arg_idx, func_name,
                                      dom, require_str_or_json,
-                                     &parse_error, preserve_neg_zero_int);
+                                     &parse_error, handle_numbers_as_double);
       *valid= !failure;
       return parse_error;
     }
@@ -1067,7 +1063,7 @@ bool get_json_wrapper(Item **args,
                       String *str,
                       const char *func_name,
                       Json_wrapper *wrapper,
-                      bool preserve_neg_zero_int)
+                      bool handle_numbers_as_double)
 {
   if (!json_value(args, arg_idx, wrapper))
   {
@@ -1095,7 +1091,7 @@ bool get_json_wrapper(Item **args,
 
   bool valid;
   if (json_is_valid(args, arg_idx, str, func_name, &dom, true, &valid,
-                     preserve_neg_zero_int))
+                    handle_numbers_as_double))
     return true;
 
   if (!valid)
