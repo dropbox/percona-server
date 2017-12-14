@@ -66,15 +66,22 @@ static unsigned char dh2048_g[]={
 static DH *get_dh2048(void)
 {
   DH *dh;
-  if ((dh=DH_new()))
-  {
-    dh->p=BN_bin2bn(dh2048_p,sizeof(dh2048_p),NULL);
-    dh->g=BN_bin2bn(dh2048_g,sizeof(dh2048_g),NULL);
-    if (! dh->p || ! dh->g)
-    {
-      DH_free(dh);
-      dh=0;
-    }
+  BIGNUM* p = BN_bin2bn(dh2048_p,sizeof(dh2048_p),NULL);
+  if (!p)
+    return 0;
+  BIGNUM* g = BN_bin2bn(dh2048_g,sizeof(dh2048_g),NULL);
+  if (!g) {
+    BN_free(p);
+  }
+  dh = DH_new();
+  if (!dh) {
+    BN_free(p);
+    BN_free(g);
+  }
+  if (!DH_set0_pqg(dh, p, NULL, g)) {
+    DH_free(dh);
+    BN_free(p);
+    BN_free(g);
   }
   return(dh);
 }
