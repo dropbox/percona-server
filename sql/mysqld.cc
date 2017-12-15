@@ -4640,9 +4640,6 @@ static void openssl_lock(int mode, openssl_lock_t *lock, const char *file,
 static int init_ssl()
 {
 #ifdef HAVE_OPENSSL
-#ifndef HAVE_YASSL
-  OPENSSL_malloc_init();
-#endif
   ssl_start();
 #ifndef EMBEDDED_LIBRARY
   if (opt_use_ssl)
