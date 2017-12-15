@@ -80,8 +80,6 @@ static DH *get_dh2048(void)
   }
   if (!DH_set0_pqg(dh, p, NULL, g)) {
     DH_free(dh);
-    BN_free(p);
-    BN_free(g);
   }
   return(dh);
 }
