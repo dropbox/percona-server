@@ -399,13 +399,6 @@ int vio_fastsend(Vio * vio __attribute__((unused)))
   int r=0;
   DBUG_ENTER("vio_fastsend");
 
-#if defined(IPTOS_THROUGHPUT)
-  {
-    int tos = IPTOS_THROUGHPUT;
-    r= mysql_socket_setsockopt(vio->mysql_socket, IPPROTO_IP, IP_TOS,
-	                           (void *)&tos, sizeof(tos));
-  }
-#endif                                    /* IPTOS_THROUGHPUT */
   if (!r)
   {
 #ifdef __WIN__
